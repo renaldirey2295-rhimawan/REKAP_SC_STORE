@@ -1,1 +1,465 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rekap Service Complain</title>
+  <meta name="theme-color" content="#123c35">
+  <style>
+    :root{--green:#123c35;--green2:#1c6255;--mint:#e8f3ef;--bg:#f4f7f6;--text:#172522;--muted:#71807b;--line:#e1e9e5;--red:#c83d3d;--amber:#a66a08}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,Arial,sans-serif;color:var(--text)}
+    .top{background:linear-gradient(120deg,#103a33,#1c6255);color:#fff;padding:25px max(18px,calc((100% - 1100px)/2))}
+    .top h1{margin:0;font-size:24px}.top p{margin:7px 0 0;color:#d7e8e2;font-size:13px}
+    .wrap{max-width:1100px;margin:22px auto;padding:0 16px 40px}
+    .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}.tab{border:1px solid var(--line);background:#fff;color:var(--green);padding:11px 16px;border-radius:12px;font-weight:700;cursor:pointer}.tab.active{background:var(--green);color:#fff;border-color:var(--green)}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 5px 20px #163c3210}
+    .panel h2{font-size:18px;margin:0 0 16px}.form-card{border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;background:#fcfefd}
+    .form-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.form-head strong{color:var(--green)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    label{display:block;font-size:12px;font-weight:700;color:#52625d;margin-bottom:6px}
+    input,select,textarea{width:100%;border:1px solid #d7e2dd;border-radius:10px;padding:12px;font:inherit;font-size:14px;color:var(--text);background:#fff;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 0 0 3px #1c62551a}
+    textarea{resize:vertical;min-height:92px;line-height:1.5}.full{grid-column:1/-1}
+    button{font:inherit}.btn{border:0;border-radius:11px;padding:12px 16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    .primary{background:var(--green);color:#fff}.secondary{background:var(--mint);color:var(--green)}.outline{background:#fff;border:1px solid var(--line);color:var(--green)}.danger{background:#fff0f0;color:var(--red)}
+    .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.btn:disabled{opacity:.5;cursor:not-allowed}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}.stat{padding:15px;border-radius:14px;background:#f5f9f7;border:1px solid var(--line)}.stat span{display:block;color:var(--muted);font-size:12px}.stat b{font-size:24px;color:var(--green)}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.toolbar input,.toolbar select{max-width:260px}
+    .record{border:1px solid var(--line);border-radius:13px;padding:14px;margin-bottom:10px}.record-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.record h3{margin:0 0 7px;font-size:15px}.record p{margin:4px 0;font-size:13px;line-height:1.5}.muted{color:var(--muted)}.pill{font-size:11px;padding:5px 9px;border-radius:20px;background:#fff2d8;color:var(--amber);font-weight:700}.pill.done{background:#e5f5eb;color:#207448}
+    .empty{text-align:center;padding:30px;color:var(--muted)}.hidden{display:none!important}
+    .notice{padding:12px 14px;border-radius:10px;margin-bottom:12px;font-size:13px;display:none}.notice.show{display:block}.notice.ok{background:#e7f5ec;color:#17623a}.notice.err{background:#fff0f0;color:#a32c2c}
+    .small{font-size:12px;color:var(--muted)}.export-note{background:#f1f7f4;border-radius:12px;padding:13px;font-size:13px;line-height:1.5;margin-bottom:14px}
+    @media(max-width:650px){.top h1{font-size:21px}.wrap{margin-top:14px}.panel{padding:15px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.stats{grid-template-columns:repeat(3,1fr)}.stat{padding:11px}.stat b{font-size:20px}.toolbar input,.toolbar select{max-width:none;width:100%}.toolbar>*{flex:1 1 100%}.actions .btn{flex:1}}
+  </style>
+</head>
+<body>
+<header class="top">
+  <h1>Rekap Service Complain</h1>
+  <p>Portal input dan monitoring Service Complain seluruh store</p>
+</header>
+
+<main class="wrap">
+  <div class="tabs">
+    <button class="tab active" data-tab="input">＋ Input SC</button>
+    <button class="tab" data-tab="history">▤ Database SC</button>
+    <button class="tab" data-tab="export">↗ Export WhatsApp</button>
+  </div>
+
+  <div id="notice" class="notice"></div>
+
+  <section id="page-input" class="page">
+    <div class="panel">
+      <h2>Input Rekap Service Complain</h2>
+      <p class="small">Tambahkan satu atau beberapa laporan SC. Jumlah laporan tidak dibatasi.</p>
+      <div id="forms"></div>
+      <div class="actions">
+        <button class="btn secondary" id="addForm">＋ Tambah Rekap SC</button>
+        <button class="btn primary" id="saveAll">Simpan Semua Laporan</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-history" class="page hidden">
+    <div class="stats">
+      <div class="stat"><span>Total SC</span><b id="totalCount">0</b></div>
+      <div class="stat"><span>Belum Export</span><b id="pendingCount">0</b></div>
+      <div class="stat"><span>Sudah Export</span><b id="exportedCount">0</b></div>
+    </div>
+    <div class="panel">
+      <h2>Database & Riwayat SC</h2>
+      <div class="toolbar">
+        <input id="search" placeholder="Cari store, No SC, SPK...">
+        <select id="filterStore"><option value="">Semua Store</option></select>
+        <button class="btn outline" id="refreshHistory">↻ Refresh</button>
+      </div>
+      <div id="historyList"><div class="empty">Memuat data...</div></div>
+    </div>
+  </section>
+
+  <section id="page-export" class="page hidden">
+    <div class="panel">
+      <h2>Export Rekap ke WhatsApp</h2>
+      <div class="export-note">
+        Sistem mengambil semua SC berstatus <b>Belum Export</b>, mengelompokkan berdasarkan store, lalu menyusun setiap SC secara lengkap. Jika satu store memiliki beberapa SC, nama store ditampilkan sekali dan seluruh SC ditampilkan di bawahnya.
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Antrean SC</span><b id="exportCount">0</b></div>
+        <div class="stat"><span>Jumlah Store</span><b id="exportStoreCount">0</b></div>
+        <div class="stat"><span>Status</span><b style="font-size:15px">PENDING</b></div>
+      </div>
+      <div id="exportPreview" class="record"><div class="empty">Memuat antrean export...</div></div>
+      <div class="actions">
+        <button class="btn secondary" id="refreshExport">↻ Perbarui Antrean</button>
+        <button class="btn primary" id="openWhatsApp" disabled>↗ Export ke WhatsApp</button>
+      </div>
+      <p class="small">Setelah tombol Export WhatsApp diklik, laporan dalam antrean ditandai sudah diekspor agar tidak ikut pada export berikutnya.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+  // GANTI dengan URL Web App Google Apps Script setelah deploy.
+  const API_URL = "https://script.google.com/macros/s/AKfycbz3QucV41o-5-6UcLUtnoSYDHF4YkUXkYgrh9VEU3Ju0v8_rlGvPLQ8YGPvVIgI6kujDw/exec";
+
+  let stores = [];
+  let records = [];
+  let pendingRecords = [];
+  let formCounter = 0;
+
+  const $ = id => document.getElementById(id);
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+
+  function api(params) {
+    return new Promise((resolve, reject) => {
+      if (!API_URL || API_URL.includes("PASTE_URL")) {
+        return reject(new Error("URL Apps Script belum dipasang di index.html."));
+      }
+
+      const callback = "scCallback_" + Date.now() + "_" + Math.floor(Math.random()*100000);
+      const script = document.createElement("script");
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error("Koneksi timeout. Periksa URL dan deployment Apps Script."));
+      }, 25000);
+
+      function cleanup() {
+        clearTimeout(timeout);
+        delete window[callback];
+        script.remove();
+      }
+
+      window[callback] = data => {
+        cleanup();
+        resolve(data);
+      };
+
+      const query = new URLSearchParams({...params, callback}).toString();
+      script.onerror = () => {
+        cleanup();
+        reject(new Error("Tidak dapat menghubungi database. Periksa deployment Apps Script."));
+      };
+
+      script.src = API_URL + (API_URL.includes("?") ? "&" : "?") + query;
+      document.body.appendChild(script);
+    });
+  }
+
+  function showNotice(message, type="ok") {
+    const n = $("notice");
+    n.textContent = message;
+    n.className = "notice show " + (type === "err" ? "err" : "ok");
+    window.setTimeout(() => n.classList.remove("show"), 5000);
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll(".tab").forEach(b =>
+      b.classList.toggle("active", b.dataset.tab === tab)
+    );
+    document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+    $("page-" + tab).classList.remove("hidden");
+
+    if (tab === "history") loadHistory();
+    if (tab === "export") loadExport();
+  }
+
+  document.querySelectorAll(".tab").forEach(b =>
+    b.addEventListener("click", () => switchTab(b.dataset.tab))
+  );
+
+  function storeOptions(selected="") {
+    return '<option value="">Pilih Store</option>' + stores.map(s =>
+      `<option value="${esc(s.name)}" ${s.name===selected?'selected':''}>${esc(s.name)}</option>`
+    ).join("");
+  }
+
+  function addForm() {
+    formCounter++;
+    const n = formCounter;
+    const div = document.createElement("div");
+    div.className = "form-card";
+    div.dataset.form = n;
+
+    div.innerHTML = `
+      <div class="form-head">
+        <strong>Rekap SC #${n}</strong>
+        <button type="button" class="btn danger removeForm" ${n===1?'disabled':''}>Hapus</button>
+      </div>
+      <div class="grid">
+        <div class="full">
+          <label>Store</label>
+          <select class="f-store" required>${storeOptions()}</select>
+        </div>
+        <div>
+          <label>SPK / Subject</label>
+          <input class="f-spk" maxlength="200" placeholder="Contoh: Plafon bocor" required>
+        </div>
+        <div>
+          <label>Tanggal Input SC</label>
+          <input class="f-date" type="date" required>
+        </div>
+        <div class="full">
+          <label>No SC</label>
+          <input class="f-no" maxlength="100" placeholder="Contoh: PRJ2604282" required>
+        </div>
+        <div class="full">
+          <label>Ket / Deskripsi Kerusakan</label>
+          <textarea class="f-ket" maxlength="5000" placeholder="Jelaskan kerusakan atau permasalahan secara lengkap..." required></textarea>
+        </div>
+      </div>`;
+
+    div.querySelector(".removeForm").addEventListener("click", () => {
+      div.remove();
+      renumberForms();
+    });
+
+    $("forms").appendChild(div);
+  }
+
+  function renumberForms() {
+    [...$("forms").children].forEach((el, i) => {
+      el.querySelector(".form-head strong").textContent = "Rekap SC #" + (i+1);
+      el.querySelector(".removeForm").disabled = $("forms").children.length === 1;
+    });
+  }
+
+  function getFormData(el) {
+    return {
+      store: el.querySelector(".f-store").value,
+      spk: el.querySelector(".f-spk").value.trim(),
+      date: el.querySelector(".f-date").value,
+      noSc: el.querySelector(".f-no").value.trim(),
+      ket: el.querySelector(".f-ket").value.trim()
+    };
+  }
+
+  $("addForm").addEventListener("click", addForm);
+
+  $("saveAll").addEventListener("click", async () => {
+    const forms = [...$("forms").children];
+    const data = forms.map(getFormData);
+    const invalid = data.findIndex(x => !x.store || !x.spk || !x.date || !x.noSc || !x.ket);
+
+    if (invalid >= 0) {
+      showNotice("Lengkapi semua kolom pada Rekap SC #" + (invalid+1) + ".", "err");
+      return;
+    }
+
+    const btn = $("saveAll");
+    btn.disabled = true;
+    btn.textContent = "Menyimpan...";
+    let saved = 0;
+
+    try {
+      for (const item of data) {
+        const result = await api({action:"save", ...item});
+        if (!result.success) throw new Error(result.message || "Gagal menyimpan data.");
+        saved++;
+      }
+
+      $("forms").innerHTML = "";
+      formCounter = 0;
+      addForm();
+      showNotice(saved + " laporan SC berhasil disimpan ke database.");
+    } catch (e) {
+      showNotice(
+        saved + " dari " + data.length + " laporan tersimpan. " +
+        e.message + " Silakan cek Database SC sebelum mengulang input.",
+        "err"
+      );
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Simpan Semua Laporan";
+    }
+  });
+
+  async function loadStores() {
+    const data = await api({action:"init"});
+    if (!data.success) throw new Error(data.message || "Gagal memuat konfigurasi.");
+
+    stores = data.stores || [];
+    $("filterStore").innerHTML =
+      '<option value="">Semua Store</option>' +
+      stores.map(s => `<option>${esc(s.name)}</option>`).join("");
+
+    addForm();
+  }
+
+  async function loadHistory() {
+    $("historyList").innerHTML = '<div class="empty">Memuat data...</div>';
+
+    try {
+      const result = await api({action:"list"});
+      records = result.records || [];
+      renderHistory();
+    } catch(e) {
+      $("historyList").innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    }
+  }
+
+  function renderHistory() {
+    const q = $("search").value.toLowerCase();
+    const store = $("filterStore").value;
+
+    const filtered = records.filter(r =>
+      (!store || r.store === store) &&
+      [r.store,r.storeCode,r.spk,r.noSc,r.ket].join(" ").toLowerCase().includes(q)
+    );
+
+    $("totalCount").textContent = records.length;
+    $("pendingCount").textContent = records.filter(r => !r.exported).length;
+    $("exportedCount").textContent = records.filter(r => r.exported).length;
+
+    if (!filtered.length) {
+      $("historyList").innerHTML = '<div class="empty">Belum ada data yang sesuai.</div>';
+      return;
+    }
+
+    $("historyList").innerHTML = filtered.map(r => `
+      <div class="record">
+        <div class="record-top">
+          <h3>${esc(r.store)}</h3>
+          <span class="pill ${r.exported?'done':''}">
+            ${r.exported?'SUDAH EXPORT':'BELUM EXPORT'}
+          </span>
+        </div>
+        <p><b>SPK:</b> ${esc(r.spk)}</p>
+        <p><b>Tgl SC:</b> ${esc(r.date)}</p>
+        <p><b>No SC:</b> ${esc(r.noSc)}</p>
+        <p><b>Ket:</b> ${esc(r.ket)}</p>
+        <p class="small">Input: ${esc(r.timestamp)} ${r.exportedAt?' • Export: '+esc(r.exportedAt):''}</p>
+      </div>
+    `).join("");
+  }
+
+  $("search").addEventListener("input", renderHistory);
+  $("filterStore").addEventListener("change", renderHistory);
+  $("refreshHistory").addEventListener("click", loadHistory);
+
+  function buildWhatsAppMessage(list) {
+    const storeOrder = stores.map(s => s.name);
+    const grouped = {};
+
+    list.forEach(r => {
+      if (!grouped[r.store]) grouped[r.store] = [];
+      grouped[r.store].push(r);
+    });
+
+    const names = storeOrder.filter(n => grouped[n])
+      .concat(Object.keys(grouped).filter(n => !storeOrder.includes(n)));
+
+    const lines = [
+      "Selamat Siang Pak Tri / Pak Rahman,",
+      "",
+      "Mohon bantuannya untuk FU terkait SC dari store kami sebagai berikut :",
+      ""
+    ];
+
+    names.forEach((name, idx) => {
+      lines.push((idx + 1) + ". " + name, "");
+
+      grouped[name].forEach((r, i) => {
+        if (grouped[name].length > 1) {
+          lines.push("SC " + (i + 1), "");
+        }
+
+        lines.push(
+          "SPK : " + r.spk,
+          "Tgl SC : " + r.date,
+          "No SC : " + r.noSc,
+          "Ket : " + r.ket,
+          ""
+        );
+
+        if (i < grouped[name].length - 1) lines.push("");
+      });
+
+      if (idx < names.length - 1) lines.push("");
+    });
+
+    lines.push("Terima kasih.");
+    return lines.join("\n").replace(/\n{3,}/g, "\n\n");
+  }
+
+  async function loadExport() {
+    $("exportPreview").innerHTML = '<div class="empty">Memuat antrean export...</div>';
+    $("openWhatsApp").disabled = true;
+
+    try {
+      const result = await api({action:"list", pendingOnly:"true"});
+      pendingRecords = result.records || [];
+      pendingRecords.reverse();
+
+      const storeCount = new Set(pendingRecords.map(r => r.store)).size;
+      $("exportCount").textContent = pendingRecords.length;
+      $("exportStoreCount").textContent = storeCount;
+
+      if (!pendingRecords.length) {
+        $("exportPreview").innerHTML =
+          '<div class="empty">Tidak ada laporan SC baru yang menunggu export.</div>';
+        return;
+      }
+
+      const msg = buildWhatsAppMessage(pendingRecords);
+      $("exportPreview").innerHTML = `
+        <label>Preview pesan (${pendingRecords.length} SC)</label>
+        <textarea id="messagePreview" readonly style="min-height:360px">${esc(msg)}</textarea>
+      `;
+      $("openWhatsApp").disabled = false;
+    } catch(e) {
+      $("exportPreview").innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    }
+  }
+
+  $("refreshExport").addEventListener("click", loadExport);
+
+  $("openWhatsApp").addEventListener("click", async () => {
+    if (!pendingRecords.length) return;
+
+    const message = buildWhatsAppMessage(pendingRecords);
+    const url = "https://wa.me/?text=" + encodeURIComponent(message);
+
+    window.open(url, "_blank");
+
+    const btn = $("openWhatsApp");
+    btn.disabled = true;
+    btn.textContent = "Memproses...";
+
+    try {
+      const ids = pendingRecords.map(r => r.id).join(",");
+      const result = await api({action:"markExported", ids});
+
+      if (!result.success) {
+        throw new Error(result.message || "Gagal memperbarui status export.");
+      }
+
+      showNotice(
+        result.count + " laporan ditandai sudah diekspor. Batch " +
+        result.batchId + "."
+      );
+      await loadExport();
+    } catch(e) {
+      showNotice(
+        "WhatsApp sudah dibuka, tetapi status export belum berhasil diperbarui: " + e.message,
+        "err"
+      );
+    } finally {
+      btn.textContent = "↗ Export ke WhatsApp";
+      btn.disabled = pendingRecords.length === 0;
+    }
+  });
+
+  (async function start() {
+    try {
+      await loadStores();
+    } catch(e) {
+      showNotice(e.message, "err");
+      $("forms").innerHTML =
+        '<div class="empty">Periksa URL Apps Script dan konfigurasi database.</div>';
+    }
+  })();
+</script>
+</body>
+</html>
 
